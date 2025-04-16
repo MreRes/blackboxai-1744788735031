@@ -3,228 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp AI Bot Dashboard</title>
-    <!-- Production-ready Tailwind CSS -->
+    <title>Financial Bot Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    }
-                }
-            }
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
         }
-    </script>
+    </style>
 </head>
 <body class="bg-gray-50">
     <div class="min-h-screen">
         <!-- Header -->
         <header class="bg-white shadow-sm">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                        <i class="fas fa-robot text-3xl text-blue-600 mr-3"></i>
-                        <h1 class="text-2xl font-bold text-gray-900">WhatsApp AI Bot Dashboard</h1>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <span id="status-indicator" class="flex items-center">
-                            <span class="h-3 w-3 bg-green-500 rounded-full mr-2"></span>
-                            <span class="text-sm text-gray-600">Online</span>
-                        </span>
-                    </div>
+            <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
+                <div class="flex items-center">
+                    <i class="fas fa-robot text-blue-500 text-2xl mr-3"></i>
+                    <h1 class="text-xl font-semibold text-gray-900">Financial Bot Dashboard</h1>
+                </div>
+                <div class="flex items-center">
+                    <span id="statusIndicator" class="flex items-center">
+                        <span class="h-3 w-3 bg-green-500 rounded-full mr-2"></span>
+                        <span class="text-sm text-gray-600">Online</span>
+                    </span>
                 </div>
             </div>
         </header>
 
         <!-- Main Content -->
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <!-- Error Alert -->
-            <div id="error-alert" class="hidden mb-8 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                <strong class="font-bold">Error!</strong>
-                <span id="error-message" class="block sm:inline"></span>
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+                <!-- Total Messages -->
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-5">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-comments text-blue-500 text-2xl"></i>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Total Messages</dt>
+                                    <dd class="flex items-baseline">
+                                        <div class="text-2xl font-semibold text-gray-900" id="totalMessages">0</div>
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Balance -->
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-5">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-wallet text-green-500 text-2xl"></i>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Current Balance</dt>
+                                    <dd class="flex items-baseline">
+                                        <div class="text-2xl font-semibold text-gray-900" id="currentBalance">Rp 0</div>
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monthly Income -->
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-5">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-arrow-up text-emerald-500 text-2xl"></i>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Monthly Income</dt>
+                                    <dd class="flex items-baseline">
+                                        <div class="text-2xl font-semibold text-gray-900" id="monthlyIncome">Rp 0</div>
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monthly Expenses -->
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-5">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-arrow-down text-red-500 text-2xl"></i>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Monthly Expenses</dt>
+                                    <dd class="flex items-baseline">
+                                        <div class="text-2xl font-semibold text-gray-900" id="monthlyExpenses">Rp 0</div>
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Stats Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="bg-white rounded-lg shadow p-6">
-                    <div class="flex items-center">
-                        <i class="fas fa-message text-blue-500 text-2xl mr-3"></i>
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-900">Total Messages</h3>
-                            <p id="total-messages" class="text-2xl font-bold text-gray-700">--</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-white rounded-lg shadow p-6">
-                    <div class="flex items-center">
-                        <i class="fas fa-clock text-green-500 text-2xl mr-3"></i>
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-900">Uptime</h3>
-                            <p id="uptime" class="text-2xl font-bold text-gray-700">--</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-white rounded-lg shadow p-6">
-                    <div class="flex items-center">
-                        <i class="fas fa-users text-purple-500 text-2xl mr-3"></i>
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-900">Active Users</h3>
-                            <p id="active-users" class="text-2xl font-bold text-gray-700">--</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Chat Logs -->
-            <div class="bg-white rounded-lg shadow">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <div class="flex justify-between items-center">
-                        <h2 class="text-xl font-semibold text-gray-900">Recent Chat Logs</h2>
-                        <button onclick="refreshData()" class="text-blue-600 hover:text-blue-800">
-                            <i class="fas fa-sync-alt mr-1"></i> Refresh
-                        </button>
-                    </div>
+            <!-- Recent Transactions -->
+            <div class="bg-white shadow rounded-lg mb-8">
+                <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Recent Transactions</h3>
+                    <button onclick="refreshData()" class="text-blue-500 hover:text-blue-700">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sender</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Message</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bot Response</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                             </tr>
                         </thead>
-                        <tbody id="chat-logs" class="bg-white divide-y divide-gray-200">
-                            <!-- Chat logs will be inserted here -->
+                        <tbody class="bg-white divide-y divide-gray-200" id="transactionsTable">
+                            <!-- Transactions will be inserted here -->
                         </tbody>
                     </table>
-                </div>
-                <!-- Loading Indicator -->
-                <div id="loading-indicator" class="hidden p-4 text-center text-gray-500">
-                    <i class="fas fa-spinner fa-spin mr-2"></i> Loading...
                 </div>
             </div>
         </main>
     </div>
 
     <script>
-        // Format timestamp
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR'
+            }).format(amount);
+        }
+
         function formatDate(dateString) {
-            return new Date(dateString).toLocaleString();
+            const date = new Date(dateString);
+            return date.toLocaleString('id-ID', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
         }
 
-        // Format uptime
-        function formatUptime(seconds) {
-            const days = Math.floor(seconds / (3600 * 24));
-            const hours = Math.floor((seconds % (3600 * 24)) / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            return `${days}d ${hours}h ${minutes}m`;
-        }
-
-        // Show error message
-        function showError(message) {
-            const errorAlert = document.getElementById('error-alert');
-            const errorMessage = document.getElementById('error-message');
-            errorMessage.textContent = message;
-            errorAlert.classList.remove('hidden');
-            setTimeout(() => {
-                errorAlert.classList.add('hidden');
-            }, 5000);
-        }
-
-        // Show loading indicator
-        function setLoading(isLoading) {
-            const loadingIndicator = document.getElementById('loading-indicator');
-            if (isLoading) {
-                loadingIndicator.classList.remove('hidden');
-            } else {
-                loadingIndicator.classList.add('hidden');
-            }
-        }
-
-        // Fetch and update chat logs
-        async function updateChatLogs() {
-            setLoading(true);
+        async function refreshData() {
             try {
-                const response = await fetch('/dashboard/logs');
-                if (!response.ok) {
-                    throw new Error('Failed to fetch chat logs');
-                }
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    const chatLogsElement = document.getElementById('chat-logs');
-                    chatLogsElement.innerHTML = data.data.map(log => `
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(log.timestamp)}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${log.sender}</td>
-                            <td class="px-6 py-4 text-sm text-gray-900">${log.message}</td>
-                            <td class="px-6 py-4 text-sm text-gray-900">${log.botResponse}</td>
-                        </tr>
-                    `).join('');
+                // Get current date
+                const now = new Date();
+                const currentMonth = now.getMonth() + 1;
+                const currentYear = now.getFullYear();
 
-                    // Update total messages
-                    document.getElementById('total-messages').textContent = data.data.length;
-                    
-                    // Update active users (unique senders)
-                    const uniqueSenders = new Set(data.data.map(log => log.sender)).size;
-                    document.getElementById('active-users').textContent = uniqueSenders;
-                } else {
-                    throw new Error(data.message || 'Failed to fetch chat logs');
+                // Fetch monthly report
+                const response = await fetch(`/api/monthly-report?month=${currentMonth}&year=${currentYear}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update stats
+                    document.getElementById('totalMessages').textContent = data.stats.totalTransactions;
+                    document.getElementById('currentBalance').textContent = formatCurrency(data.stats.currentBalance);
+                    document.getElementById('monthlyIncome').textContent = formatCurrency(data.stats.monthlyIncome);
+                    document.getElementById('monthlyExpenses').textContent = formatCurrency(data.stats.monthlyExpenses);
+
+                    // Update transactions table
+                    const tableBody = document.getElementById('transactionsTable');
+                    tableBody.innerHTML = '';
+
+                    data.transactions.forEach(transaction => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(transaction.timestamp)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                    transaction.type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                }">
+                                    ${transaction.type}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm ${
+                                transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                            }">${formatCurrency(transaction.amount)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${transaction.category}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${transaction.description}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
                 }
             } catch (error) {
-                console.error('Error fetching chat logs:', error);
-                showError(error.message);
-            } finally {
-                setLoading(false);
+                console.error('Error refreshing data:', error);
             }
         }
 
-        // Fetch and update bot status
-        async function updateBotStatus() {
-            try {
-                const response = await fetch('/dashboard/status');
-                if (!response.ok) {
-                    throw new Error('Failed to fetch bot status');
-                }
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    document.getElementById('uptime').textContent = formatUptime(data.data.uptime);
-                    
-                    // Update status indicator
-                    const allServicesActive = Object.values(data.data.services).every(status => status === 'active');
-                    const statusIndicator = document.getElementById('status-indicator');
-                    statusIndicator.querySelector('span:first-child').className = 
-                        `h-3 w-3 rounded-full mr-2 ${allServicesActive ? 'bg-green-500' : 'bg-red-500'}`;
-                    statusIndicator.querySelector('span:last-child').textContent = 
-                        allServicesActive ? 'Online' : 'Service Disruption';
-                } else {
-                    throw new Error(data.message || 'Failed to fetch bot status');
-                }
-            } catch (error) {
-                console.error('Error fetching bot status:', error);
-                showError(error.message);
-            }
-        }
-
-        // Refresh all data
-        function refreshData() {
-            updateChatLogs();
-            updateBotStatus();
-        }
-
-        // Update dashboard every 30 seconds
-        setInterval(refreshData, 30000);
-
-        // Initial update
+        // Initial load
         refreshData();
+
+        // Refresh every 30 seconds
+        setInterval(refreshData, 30000);
     </script>
 </body>
 </html>
