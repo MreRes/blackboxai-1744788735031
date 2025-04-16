@@ -4,25 +4,23 @@ const config = require('../config/config');
 class GoogleSheetsService {
   constructor() {
     this.sheets = null;
-    // Initialize with some mock data for testing
+    // Initialize with some mock financial data for testing
     this.mockData = [
       {
-        timestamp: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
-        sender: '+1234567890',
-        message: 'Hello, how can you help me?',
-        botResponse: 'Hi! I\'m here to assist you. What would you like to know?'
+        timestamp: new Date(Date.now() - 300000).toISOString(),
+        type: 'expense',
+        amount: 50000,
+        category: 'food',
+        description: 'Lunch at restaurant',
+        balance: 950000
       },
       {
-        timestamp: new Date(Date.now() - 180000).toISOString(), // 3 minutes ago
-        sender: '+1234567890',
-        message: 'I need information about your services',
-        botResponse: 'I can help you with various tasks including answering questions, providing information, and assisting with different topics. What specific information are you looking for?'
-      },
-      {
-        timestamp: new Date(Date.now() - 60000).toISOString(), // 1 minute ago
-        sender: '+9876543210',
-        message: 'What\'s the weather like today?',
-        botResponse: 'I\'m running in mock mode, but I can help you find weather information when properly configured with weather APIs.'
+        timestamp: new Date(Date.now() - 180000).toISOString(),
+        type: 'income',
+        amount: 1000000,
+        category: 'salary',
+        description: 'Monthly salary',
+        balance: 1000000
       }
     ];
     this.initializeClient();
@@ -35,14 +33,12 @@ class GoogleSheetsService {
     }
 
     try {
-      // Create JWT client without private key formatting
       const client = new google.auth.JWT({
         email: config.googleSheets.clientEmail,
         key: config.googleSheets.privateKey,
         scopes: ['https://www.googleapis.com/auth/spreadsheets']
       });
 
-      // Initialize Google Sheets API
       this.sheets = google.sheets({ version: 'v4', auth: client });
       console.log('Google Sheets client initialized successfully');
     } catch (error) {
@@ -52,23 +48,29 @@ class GoogleSheetsService {
     }
   }
 
-  async appendRow(data) {
+  async appendFinancialRecord(data) {
     const timestamp = new Date().toISOString();
+    const currentBalance = await this.getCurrentBalance();
+    const newBalance = data.type === 'income' ? 
+      currentBalance + data.amount : 
+      currentBalance - data.amount;
+
     const rowData = {
       timestamp,
-      sender: data.sender,
-      message: data.message,
-      botResponse: data.botResponse
+      type: data.type,
+      amount: data.amount,
+      category: data.category,
+      description: data.description,
+      balance: newBalance
     };
 
     if (!this.sheets) {
-      // Store in memory if running in mock mode
       this.mockData.push(rowData);
-      console.log('Mock data stored:', rowData);
+      console.log('Mock financial data stored:', rowData);
       return {
         spreadsheetId: 'MOCK_SHEET',
         updates: {
-          updatedRange: 'Sheet1!A:D',
+          updatedRange: 'Finances!A:F',
           updatedRows: this.mockData.length
         }
       };
@@ -77,14 +79,16 @@ class GoogleSheetsService {
     try {
       const values = [[
         timestamp,
-        data.sender,
-        data.message,
-        data.botResponse
+        data.type,
+        data.amount,
+        data.category,
+        data.description,
+        newBalance
       ]];
 
       const response = await this.sheets.spreadsheets.values.append({
         spreadsheetId: config.googleSheets.spreadsheetId,
-        range: 'Sheet1!A:D',
+        range: 'Finances!A:F',
         valueInputOption: 'RAW',
         insertDataOption: 'INSERT_ROWS',
         resource: {
@@ -92,50 +96,97 @@ class GoogleSheetsService {
         }
       });
 
-      console.log('Row appended successfully:', response.data);
+      console.log('Financial record appended successfully:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Error appending row to Google Sheets:', error);
-      // Fall back to mock storage
+      console.error('Error appending financial record:', error);
       this.mockData.push(rowData);
-      console.warn('Stored in mock storage due to error');
       return {
         spreadsheetId: 'MOCK_SHEET',
         updates: {
-          updatedRange: 'Sheet1!A:D',
+          updatedRange: 'Finances!A:F',
           updatedRows: this.mockData.length
         }
       };
     }
   }
 
-  async getRecentChats(limit = 50) {
+  async getCurrentBalance() {
     if (!this.sheets) {
-      // Return mock data if running in mock mode
-      console.log('Returning mock data:', this.mockData.length, 'records');
-      return this.mockData.slice(-limit);
+      const lastRecord = this.mockData[this.mockData.length - 1];
+      return lastRecord ? lastRecord.balance : 0;
     }
 
     try {
       const response = await this.sheets.spreadsheets.values.get({
         spreadsheetId: config.googleSheets.spreadsheetId,
-        range: 'Sheet1!A2:D',
+        range: 'Finances!F2:F',
         majorDimension: 'ROWS'
       });
 
       const rows = response.data.values || [];
-      return rows.slice(-limit).map(row => ({
+      if (rows.length === 0) return 0;
+      return parseFloat(rows[rows.length - 1][0]) || 0;
+    } catch (error) {
+      console.error('Error fetching current balance:', error);
+      const lastRecord = this.mockData[this.mockData.length - 1];
+      return lastRecord ? lastRecord.balance : 0;
+    }
+  }
+
+  async getMonthlyReport(month, year) {
+    if (!this.sheets) {
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 0);
+      
+      return this.mockData.filter(record => {
+        const recordDate = new Date(record.timestamp);
+        return recordDate >= startDate && recordDate <= endDate;
+      });
+    }
+
+    try {
+      const response = await this.sheets.spreadsheets.values.get({
+        spreadsheetId: config.googleSheets.spreadsheetId,
+        range: 'Finances!A2:F',
+        majorDimension: 'ROWS'
+      });
+
+      const rows = response.data.values || [];
+      return rows.filter(row => {
+        const recordDate = new Date(row[0]);
+        return recordDate.getMonth() + 1 === month && 
+               recordDate.getFullYear() === year;
+      }).map(row => ({
         timestamp: row[0],
-        sender: row[1],
-        message: row[2],
-        botResponse: row[3]
+        type: row[1],
+        amount: parseFloat(row[2]),
+        category: row[3],
+        description: row[4],
+        balance: parseFloat(row[5])
       }));
     } catch (error) {
-      console.error('Error fetching recent chats:', error);
-      // Return mock data as fallback
-      console.log('Returning mock data due to error:', this.mockData.length, 'records');
-      return this.mockData.slice(-limit);
+      console.error('Error fetching monthly report:', error);
+      return this.mockData;
     }
+  }
+
+  async getCategoryTotals(month, year) {
+    const records = await this.getMonthlyReport(month, year);
+    const totals = {
+      income: {},
+      expense: {}
+    };
+
+    records.forEach(record => {
+      const target = totals[record.type];
+      if (!target[record.category]) {
+        target[record.category] = 0;
+      }
+      target[record.category] += record.amount;
+    });
+
+    return totals;
   }
 }
 
