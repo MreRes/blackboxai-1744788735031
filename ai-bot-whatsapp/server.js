@@ -17,12 +17,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Routes
 app.use('/webhook', webhookRouter);
-app.use('/dashboard', dashboardRouter);
-
-// Root route - redirect to dashboard
-app.get('/', (req, res) => {
-  res.redirect('/index.html');
-});
+app.use('/', dashboardRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
