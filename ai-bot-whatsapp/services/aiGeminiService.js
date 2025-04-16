@@ -11,18 +11,35 @@ class AiGeminiService {
     }
   }
 
-  async generateResponse(userMessage) {
+  async processFinancialMessage(userMessage) {
     if (!this.apiKey) {
-      return this.getMockResponse(userMessage);
+      return this.mockProcessFinancialMessage(userMessage);
     }
 
     try {
+      // Create a structured prompt for financial analysis
+      const prompt = `Analyze this financial message and extract the following information in JSON format:
+      - type: "income" or "expense"
+      - amount: number (extract the amount)
+      - category: string (e.g., food, transportation, salary, etc.)
+      - description: string (brief description of the transaction)
+
+      Message: "${userMessage}"
+
+      Only respond with valid JSON. Example:
+      {
+        "type": "expense",
+        "amount": 50000,
+        "category": "food",
+        "description": "Lunch at restaurant"
+      }`;
+
       const response = await axios.post(
         this.apiUrl,
         {
           contents: [{
             parts: [{
-              text: userMessage
+              text: prompt
             }]
           }]
         },
@@ -34,38 +51,170 @@ class AiGeminiService {
         }
       );
 
-      // Extract the generated text from Gemini's response
+      // Extract and parse the JSON response
       const generatedText = response.data.candidates[0].content.parts[0].text;
-      return this.formatResponse(generatedText);
+      return this.parseFinancialResponse(generatedText);
     } catch (error) {
-      console.error('Error generating AI response:', error);
-      return this.getMockResponse(userMessage);
+      console.error('Error processing financial message:', error);
+      return this.mockProcessFinancialMessage(userMessage);
     }
   }
 
-  formatResponse(text) {
-    // Trim whitespace and ensure response isn't too long for WhatsApp
-    return text.trim().substring(0, 1500); // WhatsApp message limit
-  }
+  parseFinancialResponse(text) {
+    try {
+      // Find JSON object in the response
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('No JSON found in response');
+      }
+      
+      const data = JSON.parse(jsonMatch[0]);
+      
+      // Validate the parsed data
+      if (!data.type || !data.amount || !data.category || !data.description) {
+        throw new Error('Invalid financial data structure');
+      }
 
-  getMockResponse(userMessage) {
-    const mockResponses = [
-      "I understand you're asking about '" + userMessage + "'. Let me help you with that.",
-      "Thanks for your message. In response to '" + userMessage + "', I would typically provide a detailed answer.",
-      "I've received your query about '" + userMessage + "'. Here's a simulated response.",
-      "Thank you for reaching out. Your message about '" + userMessage + "' is important.",
-      "I'm running in mock mode, but I can acknowledge your message about '" + userMessage + "'."
-    ];
-    return mockResponses[Math.floor(Math.random() * mockResponses.length)];
-  }
-
-  // Helper method to validate if the message is appropriate for processing
-  validateMessage(message) {
-    if (!message || typeof message !== 'string') {
-      return false;
+      return {
+        success: true,
+        data: data,
+        message: this.generateConfirmationMessage(data)
+      };
+    } catch (error) {
+      console.error('Error parsing financial response:', error);
+      return {
+        success: false,
+        error: 'Could not parse financial information',
+        message: 'I could not understand the financial information. Please try again with a clearer message.'
+      };
     }
-    // Add any other validation rules (e.g., message length, content restrictions)
-    return message.length > 0 && message.length <= 2000;
+  }
+
+  generateConfirmationMessage(data) {
+    const formattedAmount = new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR'
+    }).format(data.amount);
+
+    if (data.type === 'expense') {
+      return `📝 Expense recorded:\n` +
+             `💰 Amount: ${formattedAmount}\n` +
+             `📁 Category: ${data.category}\n` +
+             `📝 Description: ${data.description}\n\n` +
+             `Type "confirm" to save this record or "cancel" to discard.`;
+    } else {
+      return `📝 Income recorded:\n` +
+             `💰 Amount: ${formattedAmount}\n` +
+             `📁 Category: ${data.category}\n` +
+             `📝 Description: ${data.description}\n\n` +
+             `Type "confirm" to save this record or "cancel" to discard.`;
+    }
+  }
+
+  mockProcessFinancialMessage(userMessage) {
+    const lowerMessage = userMessage.toLowerCase();
+    let data;
+
+    // Simple pattern matching for mock mode
+    if (lowerMessage.includes('spent') || lowerMessage.includes('bought') || lowerMessage.includes('paid')) {
+      // Extract amount - look for numbers
+      const amountMatch = lowerMessage.match(/\d+/);
+      const amount = amountMatch ? parseInt(amountMatch[0]) : 50000;
+
+      data = {
+        type: 'expense',
+        amount: amount,
+        category: lowerMessage.includes('food') ? 'food' : 
+                 lowerMessage.includes('transport') ? 'transportation' : 
+                 'general',
+        description: userMessage
+      };
+    } else if (lowerMessage.includes('received') || lowerMessage.includes('salary') || lowerMessage.includes('income')) {
+      const amountMatch = lowerMessage.match(/\d+/);
+      const amount = amountMatch ? parseInt(amountMatch[0]) : 1000000;
+
+      data = {
+        type: 'income',
+        amount: amount,
+        category: lowerMessage.includes('salary') ? 'salary' : 'other income',
+        description: userMessage
+      };
+    } else {
+      return {
+        success: false,
+        error: 'Could not identify financial information',
+        message: 'I could not identify whether this is an income or expense. Please try again with a clearer message.'
+      };
+    }
+
+    return {
+      success: true,
+      data: data,
+      message: this.generateConfirmationMessage(data)
+    };
+  }
+
+  async generateBudgetReport(categoryTotals) {
+    if (!this.apiKey) {
+      return this.mockGenerateBudgetReport(categoryTotals);
+    }
+
+    try {
+      const prompt = `Generate a budget analysis report based on these category totals:
+      ${JSON.stringify(categoryTotals, null, 2)}
+
+      Provide insights on:
+      1. Top spending categories
+      2. Income vs Expense ratio
+      3. Budget recommendations
+      
+      Format the response in a clear, readable way using emojis and bullet points.`;
+
+      const response = await axios.post(
+        this.apiUrl,
+        {
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }]
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.apiKey}`
+          }
+        }
+      );
+
+      return response.data.candidates[0].content.parts[0].text;
+    } catch (error) {
+      console.error('Error generating budget report:', error);
+      return this.mockGenerateBudgetReport(categoryTotals);
+    }
+  }
+
+  mockGenerateBudgetReport(categoryTotals) {
+    const totalIncome = Object.values(categoryTotals.income).reduce((a, b) => a + b, 0);
+    const totalExpense = Object.values(categoryTotals.expense).reduce((a, b) => a + b, 0);
+    
+    return `📊 Monthly Budget Report\n\n` +
+           `💰 Total Income: ${this.formatCurrency(totalIncome)}\n` +
+           `💸 Total Expenses: ${this.formatCurrency(totalExpense)}\n` +
+           `💵 Net Balance: ${this.formatCurrency(totalIncome - totalExpense)}\n\n` +
+           `Top Expenses:\n` +
+           Object.entries(categoryTotals.expense)
+             .sort(([,a], [,b]) => b - a)
+             .slice(0, 3)
+             .map(([category, amount]) => `• ${category}: ${this.formatCurrency(amount)}`)
+             .join('\n');
+  }
+
+  formatCurrency(amount) {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR'
+    }).format(amount);
   }
 }
 
